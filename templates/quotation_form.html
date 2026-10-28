@@ -1,0 +1,355 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if is_edit %}Edit Quotation #{{ quotation.quotation_no }} — WARDHAN TRADING EST.{% else %}New Quotation — WARDHAN TRADING EST.{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="form-page-container">
+    <!-- Header -->
+    <div class="dashboard-header">
+        <div>
+            <div class="dashboard-breadcrumbs">
+                <a href="/">Home</a> / <a href="/dashboard">Dashboard</a> / <span>{% if is_edit %}Edit #{{ quotation.quotation_no }}{% else %}New Quotation{% endif %}</span>
+            </div>
+            <h1 class="page-title">{% if is_edit %}Edit Quotation #{{ quotation.quotation_no }}{% else %}Create Quotation{% endif %}</h1>
+            <p class="page-subtitle">Configure quotation parameters below. The preview updates in real-time as you type.</p>
+        </div>
+        <div class="dashboard-header-actions">
+            <a href="/dashboard" class="btn btn-secondary">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                <span>Dashboard</span>
+            </a>
+            {% if is_edit %}
+            <a href="/quotations/{{ quotation.id }}/preview" class="btn btn-secondary">Preview Document</a>
+            <a href="/quotations/{{ quotation.id }}/pdf" class="btn btn-secondary">Download PDF</a>
+            <a href="/quotations/{{ quotation.id }}/word" class="btn btn-secondary">Download Word</a>
+            <a href="/quotations/new" class="btn btn-primary">+ New</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Mobile View Tab Switcher (Visible on < 1080px screens) -->
+    <div class="mobile-view-tabs" id="mobileViewTabs">
+        <button type="button" class="tab-btn active" id="tabBtnForm" onclick="switchEditorTab('form')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            <span>Form Editor</span>
+        </button>
+        <button type="button" class="tab-btn" id="tabBtnPreview" onclick="switchEditorTab('preview')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            <span>Live Document Preview</span>
+        </button>
+    </div>
+
+    <!-- Editor Split Layout -->
+    <div class="editor-layout">
+        <!-- Left Column: Form Panel -->
+        <div class="form-panel" id="formPanel">
+            <form id="quotationForm" method="POST" action="{% if is_edit %}/quotations/{{ quotation.id }}/update{% else %}/quotations/save{% endif %}" onsubmit="handleFormSubmit(this)">
+                
+                <!-- Section 1: Quotation Details -->
+                <div class="form-section">
+                    <div class="form-section-header">
+                        <div class="section-step-badge">1</div>
+                        <div>
+                            <h2 class="form-section-title">Quotation Meta</h2>
+                            <p class="form-section-desc">Basic identification and header details</p>
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group form-col-span-2">
+                            <label class="form-label" for="company_name">Company Name <span class="required-mark">*</span></label>
+                            <input type="text" id="company_name" name="company_name" class="form-control" value="{{ quotation.company_name if quotation else 'WARDHAN TRADING EST.' }}" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="quotation_no">Quotation Number <span class="required-mark">*</span></label>
+                            <input type="text" id="quotation_no" name="quotation_no" class="form-control" value="{{ quotation.quotation_no if quotation else '203/2020' }}" placeholder="e.g. 203/2020" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="date">Date <span class="required-mark">*</span></label>
+                            <input type="text" id="date" name="date" class="form-control" value="{{ quotation.date if quotation else '24/9/2020' }}" placeholder="e.g. 24/9/2020" required>
+                        </div>
+
+                        <div class="form-group form-col-span-2">
+                            <label class="form-label" for="customer_name">Client or Company Name <span class="required-mark">*</span></label>
+                            <input type="text" id="customer_name" name="customer_name" class="form-control" value="{{ quotation.customer_name if quotation else 'Radisson Blue Hotel, Kuwait' }}" placeholder="e.g. Radisson Blue Hotel, Kuwait" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Items Details -->
+                <div class="form-section">
+                    <div class="form-section-header">
+                        <div class="section-step-badge">2</div>
+                        <div style="flex: 1;">
+                            <h2 class="form-section-title">Line Items</h2>
+                            <p class="form-section-desc">Add multiple services or materials with K.D and Fils</p>
+                        </div>
+                        <button type="button" id="addItemBtn" class="btn btn-secondary btn-sm">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Add Item
+                        </button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="items-input-table">
+                            <thead>
+                                <tr>
+                                    <th>Description</th>
+                                    <th style="width: 80px;">Qty</th>
+                                    <th style="width: 140px; text-align: center;">Price per piece</th>
+                                    <th style="width: 140px; text-align: center;">Line Total</th>
+                                    <th style="width: 44px; text-align: center;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="itemsTableBody">
+                                {% set q_items = quotation['items'] if quotation is mapping else (quotation.items if quotation else []) %}
+                                {% if q_items %}
+                                    {% for item in q_items %}
+                                    <tr class="item-row">
+                                        <td>
+                                            <textarea name="item_description[]" class="form-control calc-trigger item-desc" rows="2" placeholder="Item description / specifications" required>{{ item.description }}</textarea>
+                                        </td>
+                                        <td style="width: 80px;">
+                                            <input type="number" step="any" min="0" name="item_quantity[]" class="form-control calc-trigger item-qty" value="{% if item.quantity and item.quantity > 0 %}{{ item.quantity|int if item.quantity == item.quantity|int else item.quantity }}{% endif %}" placeholder="1">
+                                        </td>
+                                        <td style="width: 140px;">
+                                            <div class="price-subcols">
+                                                <div>
+                                                    <div class="subcol-label">K.D</div>
+                                                    <input type="number" min="0" name="item_unit_kd[]" class="form-control calc-trigger item-ukd" value="{{ item.unit_price_kd if item.unit_price_kd else '' }}" placeholder="0">
+                                                </div>
+                                                <div>
+                                                    <div class="subcol-label">Fills</div>
+                                                    <input type="number" min="0" max="999" name="item_unit_fills[]" class="form-control calc-trigger item-ufills" value="{{ item.unit_price_fills if item.unit_price_fills else '' }}" placeholder="0">
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td style="width: 140px;">
+                                            <div class="price-subcols">
+                                                <div>
+                                                    <div class="subcol-label">K.D</div>
+                                                    <input type="number" min="0" name="item_total_kd[]" class="form-control calc-trigger item-tkd" value="{{ item.total_kd if item.total_kd else '' }}" placeholder="0">
+                                                </div>
+                                                <div>
+                                                    <div class="subcol-label">Fills</div>
+                                                    <input type="number" min="0" max="999" name="item_total_fills[]" class="form-control calc-trigger item-tfills" value="{{ item.total_fills if item.total_fills else '' }}" placeholder="0">
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td style="width: 44px; text-align: center; vertical-align: middle;">
+                                            <button type="button" class="btn btn-danger btn-icon-only remove-item-btn" title="Remove Item" aria-label="Remove item">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                                </svg>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <!-- Default Sample Item -->
+                                    <tr class="item-row">
+                                        <td>
+                                            <textarea name="item_description[]" class="form-control calc-trigger item-desc" rows="2" placeholder="Item description / specifications" required>Roll curtain one window
+Material and fitting</textarea>
+                                        </td>
+                                        <td style="width: 80px;">
+                                            <input type="number" step="any" min="0" name="item_quantity[]" class="form-control calc-trigger item-qty" value="1" placeholder="1">
+                                        </td>
+                                        <td style="width: 140px;">
+                                            <div class="price-subcols">
+                                                <div>
+                                                    <div class="subcol-label">K.D</div>
+                                                    <input type="number" min="0" name="item_unit_kd[]" class="form-control calc-trigger item-ukd" value="25" placeholder="0">
+                                                </div>
+                                                <div>
+                                                    <div class="subcol-label">Fills</div>
+                                                    <input type="number" min="0" max="999" name="item_unit_fills[]" class="form-control calc-trigger item-ufills" value="" placeholder="0">
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td style="width: 140px;">
+                                            <div class="price-subcols">
+                                                <div>
+                                                    <div class="subcol-label">K.D</div>
+                                                    <input type="number" min="0" name="item_total_kd[]" class="form-control calc-trigger item-tkd" value="25" placeholder="0">
+                                                </div>
+                                                <div>
+                                                    <div class="subcol-label">Fills</div>
+                                                    <input type="number" min="0" max="999" name="item_total_fills[]" class="form-control calc-trigger item-tfills" value="" placeholder="0">
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td style="width: 44px; text-align: center; vertical-align: middle;">
+                                            <button type="button" class="btn btn-danger btn-icon-only remove-item-btn" title="Remove Item" aria-label="Remove item">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                                </svg>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Grand Total Bar -->
+                    <div class="grand-total-bar">
+                        <span class="grand-total-label">Calculated Grand Total:</span>
+                        <span id="grandTotalDisplay" class="grand-total-value">KD 25.000</span>
+                    </div>
+                </div>
+
+                <!-- Section 3: Additional Details -->
+                <div class="form-section">
+                    <div class="form-section-header">
+                        <div class="section-step-badge">3</div>
+                        <div>
+                            <h2 class="form-section-title">Sign-off &amp; Incharge Details</h2>
+                            <p class="form-section-desc">Amount in words and contact information</p>
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group form-col-span-2">
+                            <label class="form-label" for="amount_in_words">Total Amount in Words <span class="required-mark">*</span></label>
+                            <input type="text" id="amount_in_words" name="amount_in_words" class="form-control" value="{{ quotation.amount_in_words if quotation else 'KD Twenty Five' }}" placeholder="e.g. KD Twenty Five" required>
+                        </div>
+
+                        <div class="form-group form-col-span-2">
+                            <label class="form-label" for="incharge">Incharge Name</label>
+                            <input type="text" id="incharge" name="incharge" class="form-control" value="{{ quotation.incharge if quotation else '' }}" placeholder="e.g. Thilakan (leave blank if none)">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="email">Email Address</label>
+                            <input type="email" id="email" name="email" class="form-control" value="{{ quotation.email if quotation else 'thilakantmt@gmail.com' }}" placeholder="e.g. thilakantmt@gmail.com">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="phone">Phone Number</label>
+                            <input type="text" id="phone" name="phone" class="form-control" value="{{ quotation.phone if quotation else '+965 99983543' }}" placeholder="e.g. +965 99983543">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="form-actions-bar">
+                    <button type="submit" id="saveQuotationBtn" class="btn btn-primary btn-lg">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                            <polyline points="7 3 7 8 15 8"></polyline>
+                        </svg>
+                        <span>Save Quotation</span>
+                    </button>
+                    <a href="/dashboard" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Right Column: Live Document Preview -->
+        <div class="preview-panel" id="previewPanel">
+            <div class="preview-toolbar">
+                <span class="preview-toolbar-title">
+                    Live Document Preview
+                </span>
+                <span class="preview-toolbar-badge">
+                    A4 Authentic Layout
+                </span>
+            </div>
+
+            <div class="preview-paper" id="paperPreview">
+                <!-- 1. Company Name -->
+                <div class="pv-company-name" id="pvCompany">WARDHAN TRADING EST.</div>
+
+                <!-- 2. QUOTATION Title -->
+                <div class="pv-quotation-title">QUOTATION</div>
+
+                <!-- 3. Top Line -->
+                <hr class="pv-hr">
+
+                <!-- 4. Date & Quotation No -->
+                <div class="pv-meta-row">
+                    <span id="pvDate">Date  :  24/9/2020</span>
+                    <span id="pvQNo">Quotation No:203/2020</span>
+                </div>
+
+                <!-- 5. Customer Name -->
+                <div class="pv-customer-name" id="pvCustomer">Radisson Blue Hotel, Kuwait</div>
+
+                <!-- 6. Quotation Table (Properly sized with individual cells) -->
+                <table class="pv-table">
+                    <colgroup>
+                        <col style="width: 44%;">
+                        <col style="width: 14%;">
+                        <col style="width: 10.5%;">
+                        <col style="width: 10.5%;">
+                        <col style="width: 10.5%;">
+                        <col style="width: 10.5%;">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th rowspan="2" class="pv-th-desc">Description</th>
+                            <th rowspan="2" class="pv-th-qty">Quantity</th>
+                            <th colspan="2" class="pv-th-price">Price per<br>piece</th>
+                            <th colspan="2" class="pv-th-total">Price per<br>piece</th>
+                        </tr>
+                        <tr>
+                            <th class="pv-subcol">K.D</th>
+                            <th class="pv-subcol">Fills</th>
+                            <th class="pv-subcol">K.D</th>
+                            <th class="pv-subcol">Fills</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pvItemsBody">
+                        <!-- Populated dynamically via script.js -->
+                    </tbody>
+                    <tfoot>
+                        <tr class="pv-total-row">
+                            <td class="pv-total-label">total</td>
+                            <td class="pv-cell-center"></td>
+                            <td class="pv-cell-center"></td>
+                            <td class="pv-cell-center"></td>
+                            <td class="pv-cell-center" id="pvTotKD">25</td>
+                            <td class="pv-cell-center" id="pvTotFills"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+
+                <!-- 7. Amount in Words -->
+                <div class="pv-amount-words" id="pvWords">KD Twenty Five</div>
+
+                <!-- 8. Contact & Incharge Block -->
+                <div class="pv-contact-block">
+                    <div id="pvIncharge">Incharge:</div>
+                    <div style="margin-top: 10px;">
+                        Email: <a id="pvEmail" class="link-email" href="mailto:thilakantmt@gmail.com">thilakantmt@gmail.com</a>
+                    </div>
+                    <div style="margin-top: 10px;" id="pvPhone">Ph no: +965 99983543</div>
+                </div>
+
+                <!-- 9. Bottom Horizontal Line -->
+                <hr class="pv-bottom-hr">
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

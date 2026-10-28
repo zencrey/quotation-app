@@ -1,0 +1,29 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.env
+.venv/
+env/
+venv/
+ENV/
+
+# Temporary generated quotation files
+generated/pdf/*.pdf
+generated/word/*.docx
+!generated/pdf/.gitkeep
+!generated/word/.gitkeep
+
+# Data & database
+data/
+*.sqlite
+*.db
+*.xlsx
+
+# Editor & OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

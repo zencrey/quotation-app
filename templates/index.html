@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WARDHAN TRADING EST. — Quotation Generator</title>
+
+    <!-- PWA & Mobile Web App Meta -->
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Quotation">
+    <link rel="apple-touch-icon" href="/static/icon-192.png">
+
+    <!-- Prevent theme flash -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('wt-theme');
+            if (savedTheme) {
+                document.documentElement.setAttribute('data-theme', savedTheme);
+            } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
+
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        /* Mobile App & Login Specific Styles */
+        .login-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 1.5rem;
+            background: var(--bg-page);
+        }
+        .login-card {
+            width: 100%;
+            max-width: 420px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            padding: 2.5rem 2rem;
+            text-align: center;
+        }
+        .login-header {
+            margin-bottom: 2rem;
+        }
+        .login-header .brand-logo-mark {
+            margin: 0 auto 1rem auto;
+            width: 52px;
+            height: 52px;
+            font-size: 1.5rem;
+        }
+        .login-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text-main);
+            letter-spacing: -0.02em;
+            margin-bottom: 0.25rem;
+        }
+        .login-subtitle {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+        .login-form {
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+        .pwa-install-banner {
+            display: none;
+            background: linear-gradient(135deg, #1e40af, #3b82f6);
+            color: #ffffff;
+            padding: 0.6rem 1rem;
+            font-size: 0.85rem;
+            border-radius: var(--radius);
+            margin-bottom: 1rem;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: var(--shadow-md);
+        }
+        .pwa-install-banner.show {
+            display: flex;
+        }
+        .btn-install {
+            background: #ffffff;
+            color: #1e40af;
+            border: none;
+            padding: 0.35rem 0.85rem;
+            border-radius: var(--radius-full);
+            font-weight: 700;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        /* ======================================================================
+           Mobile-First Touch-Friendly Item Cards
+           ====================================================================== */
+        .items-card-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+        }
+        .item-card {
+            background: var(--bg-card-subtle);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 1.15rem;
+            position: relative;
+            transition: var(--transition);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        }
+        .item-card:focus-within {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px var(--primary-glow);
+        }
+        .item-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.85rem;
+            padding-bottom: 0.6rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .item-badge {
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--primary);
+            background: var(--primary-light);
+            padding: 0.25rem 0.75rem;
+            border-radius: var(--radius-full);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .item-card .item-desc {
+            font-size: 15px !important;
+            line-height: 1.45;
+            min-height: 54px;
+        }
+        .item-pricing-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.85rem;
+        }
+        @media (min-width: 640px) {
+            .item-pricing-grid {
+                grid-template-columns: 130px 1fr 1fr;
+                align-items: end;
+            }
+        }
+        .currency-split-inputs {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 0.5rem;
+        }
+        .currency-col {
+            position: relative;
+        }
+        .currency-tag {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            pointer-events: none;
+            z-index: 1;
+        }
+        .currency-col input {
+            padding-left: 2.25rem !important;
+            text-align: right;
+            font-size: 16px !important; /* Prevents auto-zoom on mobile */
+            font-weight: 600;
+            min-height: 44px;
+        }
+        .pricing-subgroup {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 0.65rem 0.75rem;
+        }
+        .pricing-subgroup .form-label {
+            margin-bottom: 0.35rem;
+            font-size: 0.8rem;
+        }
+        .total-subgroup {
+            background: rgba(37, 99, 235, 0.05);
+            border: 1px solid rgba(37, 99, 235, 0.25);
+        }
+        .total-subgroup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.35rem;
+        }
+        .calc-mode-indicator {
+            font-size: 0.7rem;
+            color: var(--primary);
+            font-weight: 600;
+            background: var(--primary-light);
+            padding: 0.15rem 0.45rem;
+            border-radius: var(--radius-full);
+        }
+
+        /* ======================================================================
+           3-Try Security Lockdown & Timer Styles
+           ====================================================================== */
+        .shake {
+            animation: shakeAnim 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        @keyframes shakeAnim {
+            10%, 90% { transform: translate3d(-3px, 0, 0); }
+            20%, 80% { transform: translate3d(5px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+            40%, 60% { transform: translate3d(6px, 0, 0); }
+        }
+        .attempts-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.8rem;
+            font-weight: 700;
+            padding: 0.35rem 0.75rem;
+            border-radius: var(--radius-full);
+            margin-top: 0.25rem;
+        }
+        .attempts-pill.warning {
+            background: rgba(217, 119, 6, 0.15);
+            color: #d97706;
+            border: 1px solid rgba(217, 119, 6, 0.3);
+        }
+        .attempts-pill.danger {
+            background: rgba(220, 38, 38, 0.15);
+            color: #dc2626;
+            border: 1px solid rgba(220, 38, 38, 0.3);
+        }
+        .lockout-box {
+            background: rgba(220, 38, 38, 0.08);
+            border: 1px solid rgba(220, 38, 38, 0.35);
+            border-radius: var(--radius);
+            padding: 1.5rem 1rem;
+            margin-bottom: 1.25rem;
+            text-align: center;
+        }
+        .lockout-timer {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 2.25rem;
+            font-weight: 900;
+            color: #dc2626;
+            letter-spacing: 0.08em;
+            margin: 0.6rem 0;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ======================================================================
+         SCREEN 1: High-Security Authenticated Login Screen (3-Attempt Lockout)
+         ====================================================================== -->
+    <div id="loginScreen" class="login-wrap">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="brand-logo-mark">
+                    <span>W</span>
+                </div>
+                <h1 class="login-title">WARDHAN TRADING EST.</h1>
+                <p class="login-subtitle">Quotation Generator &bull; Offline Mobile App</p>
+            </div>
+
+            <!-- Security Lockdown Box (Visible when locked out) -->
+            <div id="lockoutBox" class="lockout-box" style="display: none;">
+                <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto 0.5rem auto; display: block;">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                <div style="font-weight: 800; color: #dc2626; font-size: 1.05rem;">Security Lockdown</div>
+                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">3 failed attempts exceeded. Access locked.</div>
+                <div id="lockoutCountdown" class="lockout-timer">15:00</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">Please wait for the timer to expire to retry.</div>
+            </div>
+
+            <div id="loginAlert" class="alert alert-danger" style="display: none; margin-bottom: 1.25rem;">
+                <div class="alert-content">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <span id="loginAlertText">Incorrect username or password.</span>
+                </div>
+            </div>
+
+            <form id="simpleLoginForm" class="login-form" onsubmit="handleSimpleLogin(event)">
+                <div class="form-group">
+                    <label class="form-label" for="loginUsername">Username</label>
+                    <input type="text" id="loginUsername" class="form-control" placeholder="Enter username" required autofocus autocomplete="username" style="font-size: 16px;">
+                </div>
+
+                <div class="form-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                        <label class="form-label" for="loginPassword" style="margin-bottom: 0;">Password</label>
+                        <div id="attemptsIndicator" class="attempts-pill warning" style="display: none;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                            </svg>
+                            <span id="attemptsText">3 attempts remaining</span>
+                        </div>
+                    </div>
+                    <div style="position: relative;">
+                        <input type="password" id="loginPassword" class="form-control" placeholder="Enter password" required autocomplete="current-password" style="font-size: 16px;">
+                        <button type="button" onclick="toggleLoginPassword()" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted);" title="Show/Hide Password">
+                            <svg id="eyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" id="loginSubmitBtn" class="btn btn-primary btn-lg" style="width: 100%; justify-content: center; margin-top: 0.5rem; min-height: 48px; font-weight: 700;">
+                    <span>Sign In</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ======================================================================
+         SCREEN 2: Quotation Generator Application (Offline Mobile & Desktop)
+         ====================================================================== -->
+    <div id="appScreen" style="display: none; flex-direction: column; min-height: 100vh;">
+        <!-- Top App Navbar -->
+        <header class="navbar no-print">
+            <div class="nav-container">
+                <div class="nav-brand">
+                    <div class="brand-logo-mark">
+                        <span>W</span>
+                    </div>
+                    <div class="brand-text-wrap">
+                        <span class="brand-name">WARDHAN TRADING EST.</span>
+                        <span class="brand-subtitle">Quotation Generator</span>
+                    </div>
+                </div>
+
+                <div class="nav-actions">
+                    <!-- Install App Button (Visible on mobile/PWA browsers) -->
+                    <button type="button" id="installPwaBtn" class="btn btn-secondary btn-sm" style="display: none;" title="Install on phone home screen">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                            <line x1="12" y1="18" x2="12.01" y2="18"></line>
+                        </svg>
+                        <span>Install App</span>
+                    </button>
+
+                    <!-- Theme Switcher -->
+                    <button type="button" id="themeToggleBtn" class="theme-toggle-btn" aria-label="Toggle theme" title="Toggle theme">
+                        <svg class="sun-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                        </svg>
+                        <svg class="moon-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </button>
+
+                    <!-- Sign Out Button -->
+                    <button type="button" onclick="handleLogout()" class="btn btn-secondary btn-sm" title="Sign out of the application">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                        <span>Sign Out</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="main-content" style="padding-top: 1.5rem;">
+            <!-- Mobile View Switcher Tabs (< 1080px screens) -->
+            <div class="mobile-view-tabs no-print" id="mobileViewTabs">
+                <button type="button" class="tab-btn active" id="tabBtnForm" onclick="switchEditorTab('form')">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                    <span>Edit Form</span>
+                </button>
+                <button type="button" class="tab-btn" id="tabBtnPreview" onclick="switchEditorTab('preview')">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    <span>View Bill</span>
+                </button>
+            </div>
+
+            <!-- Two-Column Editor Layout -->
+            <div class="editor-layout">
+                <!-- Left Column: Quotation Form -->
+                <div class="form-panel no-print" id="formPanel">
+                    <form id="quotationForm" method="POST" action="/api/pdf">
+                        <!-- Card 1: Quotation Details -->
+                        <div class="card form-section">
+                            <div class="section-title">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                </svg>
+                                <span>Quotation Details</span>
+                            </div>
+
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label class="form-label" for="company_name">Company Name</label>
+                                    <input type="text" id="company_name" name="company_name" class="form-control" value="WARDHAN TRADING EST." required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label" for="date">Date</label>
+                                    <input type="text" id="date" name="date" class="form-control" value="24/9/2020" placeholder="e.g. 24/9/2020" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label" for="quotation_no">Quotation Number</label>
+                                    <input type="text" id="quotation_no" name="quotation_no" class="form-control" value="203/2020" placeholder="e.g. 203/2020" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label" for="customer_name">Customer / Company Name</label>
+                                    <input type="text" id="customer_name" name="customer_name" class="form-control" value="Radisson Blue Hotel, Kuwait" placeholder="e.g. Radisson Blue Hotel, Kuwait" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card 2: Item Details Table -->
+                        <div class="card form-section">
+                            <div class="section-header-flex">
+                                <div class="section-title">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="8" y1="6" x2="21" y2="6"></line>
+                                        <line x1="8" y1="12" x2="21" y2="12"></line>
+                                        <line x1="8" y1="18" x2="21" y2="18"></line>
+                                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                                    </svg>
+                                    <span>Item Details</span>
+                                </div>
+                                <button type="button" id="addItemBtn" class="btn btn-secondary btn-sm">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                    <span>Add Item</span>
+                                </button>
+                            </div>
+
+                            <!-- Mobile-First Touch-Friendly Item Cards Container -->
+                            <div id="itemsContainer" class="items-card-list">
+                                <div class="item-card item-row" data-manual-total="false">
+                                    <div class="item-card-header">
+                                        <span class="item-badge">Item <span class="item-index">1</span></span>
+                                        <button type="button" class="btn btn-danger btn-sm remove-item-btn" title="Remove Item" style="padding: 0.35rem 0.75rem;">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <polyline points="3 6 5 6 21 6"></polyline>
+                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                            </svg>
+                                            <span>Delete</span>
+                                        </button>
+                                    </div>
+
+                                    <div class="form-group" style="margin-bottom: 0.85rem;">
+                                        <label class="form-label">Description &amp; Specifications</label>
+                                        <textarea name="item_description[]" class="form-control calc-trigger item-desc" rows="2" placeholder="Item description / specifications" required>Roll curtain one window — Material and fitting</textarea>
+                                    </div>
+
+                                    <div class="item-pricing-grid">
+                                        <div class="form-group item-qty-wrap">
+                                            <label class="form-label">Quantity</label>
+                                            <input type="number" step="any" min="0" inputmode="decimal" name="item_quantity[]" class="form-control calc-trigger item-qty" value="1" placeholder="Qty">
+                                        </div>
+
+                                        <div class="pricing-subgroup">
+                                            <label class="form-label">Price per piece (Individual)</label>
+                                            <div class="currency-split-inputs">
+                                                <div class="currency-col">
+                                                    <span class="currency-tag">K.D</span>
+                                                    <input type="number" min="0" inputmode="numeric" name="item_unit_kd[]" class="form-control calc-trigger item-ukd" value="25" placeholder="0">
+                                                </div>
+                                                <div class="currency-col">
+                                                    <span class="currency-tag">Fills</span>
+                                                    <input type="number" min="0" max="999" inputmode="numeric" name="item_unit_fills[]" class="form-control calc-trigger item-ufills" value="" placeholder="0">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="pricing-subgroup total-subgroup">
+                                            <div class="total-subgroup-header">
+                                                <label class="form-label" style="margin-bottom: 0;">Total price per piece</label>
+                                                <span class="calc-mode-indicator">Auto / Manual</span>
+                                            </div>
+                                            <div class="currency-split-inputs">
+                                                <div class="currency-col">
+                                                    <span class="currency-tag">K.D</span>
+                                                    <input type="number" min="0" inputmode="numeric" name="item_total_kd[]" class="form-control calc-trigger item-tkd" value="25" placeholder="0">
+                                                </div>
+                                                <div class="currency-col">
+                                                    <span class="currency-tag">Fills</span>
+                                                    <input type="number" min="0" max="999" inputmode="numeric" name="item_total_fills[]" class="form-control calc-trigger item-tfills" value="" placeholder="0">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Live Grand Total Bar -->
+                            <div class="grand-total-bar">
+                                <span class="grand-total-label">Grand Total:</span>
+                                <span class="grand-total-amount" id="grandTotalDisplay">KD 25.000</span>
+                            </div>
+                        </div>
+
+                        <!-- Card 3: Additional Details -->
+                        <div class="card form-section">
+                            <div class="section-title">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                </svg>
+                                <span>Additional Details</span>
+                            </div>
+
+                            <div class="form-grid">
+                                <div class="form-group form-col-span-2">
+                                    <label class="form-label" for="amount_in_words">Total Amount in Words</label>
+                                    <input type="text" id="amount_in_words" name="amount_in_words" class="form-control" value="KD Twenty Five" placeholder="e.g. KD Twenty Five">
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label" for="incharge">Incharge</label>
+                                    <input type="text" id="incharge" name="incharge" class="form-control" value="Thilakan" placeholder="e.g. Thilakan">
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label" for="email">Email Address</label>
+                                    <input type="email" id="email" name="email" class="form-control" value="thilakantmt@gmail.com" placeholder="e.g. thilakantmt@gmail.com">
+                                </div>
+
+                                <div class="form-group form-col-span-2">
+                                    <label class="form-label" for="phone">Phone Number</label>
+                                    <input type="text" id="phone" name="phone" class="form-control" value="+965 99983543" placeholder="e.g. +965 99983543">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons Bar -->
+                        <div class="form-actions-bar" style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
+                            <!-- Generate PDF button -->
+                            <button type="button" onclick="submitForPdf()" class="btn btn-primary btn-lg">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                <span>Download PDF</span>
+                            </button>
+
+                            <!-- Generate Word button -->
+                            <button type="button" onclick="submitForWord()" class="btn btn-secondary btn-lg">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                </svg>
+                                <span>Download Word</span>
+                            </button>
+
+                            <!-- Print / Save to PDF directly (100% Offline Mobile Capable) -->
+                            <button type="button" onclick="window.print()" class="btn btn-secondary btn-lg" title="Print or Save as PDF directly on device">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                                    <rect x="6" y="14" width="12" height="8"></rect>
+                                </svg>
+                                <span>Print / Save PDF</span>
+                            </button>
+
+                            <!-- Reset Form -->
+                            <button type="button" onclick="resetSampleData()" class="btn btn-secondary">
+                                <span>Reset Sample</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Right Column: Live A4 Document Preview -->
+                <div class="preview-panel" id="previewPanel">
+                    <div class="preview-toolbar no-print">
+                        <span class="preview-toolbar-title">Live Document Preview</span>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="window.print()">
+                                <span>Print Preview</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="preview-paper" id="paperPreview">
+                        <!-- 1. Company Name -->
+                        <div class="pv-company-name" id="pvCompany">WARDHAN TRADING EST.</div>
+
+                        <!-- 2. QUOTATION Title -->
+                        <div class="pv-quotation-title">QUOTATION</div>
+
+                        <!-- 3. Top Line -->
+                        <hr class="pv-hr">
+
+                        <!-- 4. Date & Quotation No -->
+                        <div class="pv-meta-row">
+                            <span id="pvDate">Date  :  24/9/2020</span>
+                            <span id="pvQNo">Quotation No:203/2020</span>
+                        </div>
+
+                        <!-- 5. Customer Name -->
+                        <div class="pv-customer-name" id="pvCustomer">Radisson Blue Hotel, Kuwait</div>
+
+                        <!-- 6. Quotation Table (Symmetrically sized with individual cells) -->
+                        <table class="pv-table">
+                            <colgroup>
+                                <col style="width: 44%;">
+                                <col style="width: 14%;">
+                                <col style="width: 10.5%;">
+                                <col style="width: 10.5%;">
+                                <col style="width: 10.5%;">
+                                <col style="width: 10.5%;">
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th rowspan="2" class="pv-th-desc">Description</th>
+                                    <th rowspan="2" class="pv-th-qty">Quantity</th>
+                                    <th colspan="2" class="pv-th-price">Price per<br>piece</th>
+                                    <th colspan="2" class="pv-th-total">Total price<br>per piece</th>
+                                </tr>
+                                <tr>
+                                    <th class="pv-subcol">K.D</th>
+                                    <th class="pv-subcol">Fills</th>
+                                    <th class="pv-subcol">K.D</th>
+                                    <th class="pv-subcol">Fills</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pvItemsBody">
+                                <!-- Populated dynamically by script.js -->
+                            </tbody>
+                            <tfoot>
+                                <tr class="pv-total-row">
+                                    <td class="pv-total-label">total</td>
+                                    <td class="pv-cell-center"></td>
+                                    <td class="pv-cell-center"></td>
+                                    <td class="pv-cell-center"></td>
+                                    <td class="pv-cell-center" id="pvTotKD">25</td>
+                                    <td class="pv-cell-center" id="pvTotFills"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+
+                        <!-- 7. Amount in Words -->
+                        <div class="pv-amount-words" id="pvWords">KD Twenty Five</div>
+
+                        <!-- 8. Contact & Incharge Block -->
+                        <div class="pv-contact-block">
+                            <div class="pv-incharge" id="pvIncharge">Incharge: Thilakan</div>
+                            <div>Email: <a href="mailto:thilakantmt@gmail.com" class="pv-email" id="pvEmail">thilakantmt@gmail.com</a></div>
+                            <div class="pv-phone" id="pvPhone">Ph no: +965 99983543</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/script.js"></script>
+    <script>
+        // High-Security Configuration: Plaintext password is NEVER in frontend code
+        const PASSWORD_SALT = "wt_quotation_2026_sec_salt";
+        const PASSWORD_HASH = "178740395d5cbf6687602daf8060db236cc79ae78aecac1e4ce0e0ea24830b2e";
+        let lockoutTimerInterval = null;
+
+        function getRemainingLockoutSeconds() {
+            const lockoutUntil = parseInt(localStorage.getItem('wt_lockout_until') || '0', 10);
+            const diff = Math.ceil((lockoutUntil - Date.now()) / 1000);
+            return diff > 0 ? diff : 0;
+        }
+
+        function startLockoutCountdown(seconds) {
+            const lockoutBox = document.getElementById('lockoutBox');
+            const countdownEl = document.getElementById('lockoutCountdown');
+            const usernameInput = document.getElementById('loginUsername');
+            const passwordInput = document.getElementById('loginPassword');
+            const submitBtn = document.getElementById('loginSubmitBtn');
+            const alertBox = document.getElementById('loginAlert');
+            const attemptsPill = document.getElementById('attemptsIndicator');
+
+            if (alertBox) alertBox.style.display = 'none';
+            if (attemptsPill) attemptsPill.style.display = 'none';
+            if (lockoutBox) lockoutBox.style.display = 'block';
+
+            if (usernameInput) usernameInput.disabled = true;
+            if (passwordInput) passwordInput.disabled = true;
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span>Access Locked</span>';
+            }
+
+            if (lockoutTimerInterval) clearInterval(lockoutTimerInterval);
+
+            let remaining = seconds;
+            function updateTimer() {
+                if (remaining <= 0) {
+                    clearInterval(lockoutTimerInterval);
+                    lockoutTimerInterval = null;
+                    localStorage.removeItem('wt_lockout_until');
+                    localStorage.removeItem('wt_failed_attempts');
+                    if (lockoutBox) lockoutBox.style.display = 'none';
+                    if (usernameInput) usernameInput.disabled = false;
+                    if (passwordInput) {
+                        passwordInput.disabled = false;
+                        passwordInput.value = '';
+                    }
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = `<span>Sign In</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>`;
+                    }
+                    if (alertBox) {
+                        alertBox.className = 'alert alert-info';
+                        alertBox.style.display = 'block';
+                        document.getElementById('loginAlertText').textContent = 'Lockout expired. You have 3 attempts.';
+                    }
+                    return;
+                }
+                const m = Math.floor(remaining / 60);
+                const s = remaining % 60;
+                if (countdownEl) {
+                    countdownEl.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+                }
+                remaining--;
+            }
+
+            updateTimer();
+            lockoutTimerInterval = setInterval(updateTimer, 1000);
+        }
+
+        async function checkAuthStatus() {
+            const remainingSec = getRemainingLockoutSeconds();
+            if (remainingSec > 0) {
+                startLockoutCountdown(remainingSec);
+                return;
+            }
+
+            // Sync with backend security rate limiter if online
+            try {
+                const res = await fetch('/api/auth/status');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.locked && data.lockout_remaining > 0) {
+                        localStorage.setItem('wt_lockout_until', Date.now() + data.lockout_remaining * 1000);
+                        startLockoutCountdown(data.lockout_remaining);
+                        return;
+                    }
+                    if (data.authenticated) {
+                        localStorage.setItem('wardhan_auth_user', 'user');
+                    }
+                }
+            } catch (err) {
+                // Device is offline: verify through local secure state
+            }
+
+            const isAuth = localStorage.getItem('wardhan_auth_user');
+            const loginScreen = document.getElementById('loginScreen');
+            const appScreen = document.getElementById('appScreen');
+
+            if (isAuth === 'user') {
+                loginScreen.style.display = 'none';
+                appScreen.style.display = 'flex';
+            } else {
+                loginScreen.style.display = 'flex';
+                appScreen.style.display = 'none';
+            }
+        }
+
+        async function handleSimpleLogin(e) {
+            e.preventDefault();
+            const remainingSec = getRemainingLockoutSeconds();
+            if (remainingSec > 0) {
+                startLockoutCountdown(remainingSec);
+                return;
+            }
+
+            const usernameInput = document.getElementById('loginUsername');
+            const passwordInput = document.getElementById('loginPassword');
+            const submitBtn = document.getElementById('loginSubmitBtn');
+            const alertBox = document.getElementById('loginAlert');
+
+            const u = usernameInput.value.trim();
+            const p = passwordInput.value.trim();
+
+            if (!u || !p) return;
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<span>Verifying...</span>`;
+
+            try {
+                // Online verification with server rate limiter & IP lockout
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: u, password: p })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    localStorage.setItem('wardhan_auth_user', 'user');
+                    localStorage.removeItem('wt_lockout_until');
+                    localStorage.removeItem('wt_failed_attempts');
+                    if (alertBox) alertBox.style.display = 'none';
+                    checkAuthStatus();
+                } else if (response.status === 429) {
+                    // Strict 3-try lockout triggered by server
+                    const lockoutSec = data.lockout_remaining || 900;
+                    localStorage.setItem('wt_lockout_until', Date.now() + lockoutSec * 1000);
+                    startLockoutCountdown(lockoutSec);
+                } else {
+                    // 1st or 2nd wrong attempt
+                    handleFailedAttempt(data.attempts_left, data.message);
+                }
+            } catch (networkErr) {
+                // Offline verification fallback with cryptographic SHA-256
+                await handleOfflineLogin(u, p);
+            } finally {
+                if (!getRemainingLockoutSeconds()) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = `<span>Sign In</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>`;
+                }
+            }
+        }
+
+        async function handleOfflineLogin(u, p) {
+            let failedAttempts = parseInt(localStorage.getItem('wt_failed_attempts') || '0', 10);
+            const isMatch = await verifyOfflineHash(u, p);
+
+            if (isMatch) {
+                localStorage.setItem('wardhan_auth_user', 'user');
+                localStorage.removeItem('wt_failed_attempts');
+                checkAuthStatus();
+            } else {
+                failedAttempts++;
+                localStorage.setItem('wt_failed_attempts', failedAttempts);
+                if (failedAttempts >= 3) {
+                    localStorage.setItem('wt_lockout_until', Date.now() + 900 * 1000);
+                    startLockoutCountdown(900);
+                } else {
+                    const left = 3 - failedAttempts;
+                    handleFailedAttempt(left, `Incorrect credentials. ${left} attempt${left > 1 ? 's' : ''} remaining.`);
+                }
+            }
+        }
+
+        async function verifyOfflineHash(u, p) {
+            if (u.trim() !== "user") return false;
+            try {
+                const encoder = new TextEncoder();
+                const data = encoder.encode(PASSWORD_SALT + p.trim());
+                const hashBuf = await crypto.subtle.digest("SHA-256", data);
+                const hashHex = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
+                return hashHex === PASSWORD_HASH;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function handleFailedAttempt(attemptsLeft, message) {
+            const alertBox = document.getElementById('loginAlert');
+            const alertText = document.getElementById('loginAlertText');
+            const attemptsPill = document.getElementById('attemptsIndicator');
+            const attemptsText = document.getElementById('attemptsText');
+            const passwordInput = document.getElementById('loginPassword');
+
+            if (alertBox) {
+                alertBox.className = 'alert alert-danger';
+                alertBox.style.display = 'block';
+                if (alertText) alertText.textContent = message || `Incorrect credentials. ${attemptsLeft} attempts remaining.`;
+            }
+
+            if (attemptsPill && attemptsText) {
+                attemptsPill.style.display = 'inline-flex';
+                attemptsPill.className = `attempts-pill ${attemptsLeft <= 1 ? 'danger' : 'warning'}`;
+                attemptsText.textContent = `${attemptsLeft} attempt${attemptsLeft > 1 ? 's' : ''} remaining`;
+            }
+
+            if (passwordInput) {
+                passwordInput.classList.add('shake');
+                setTimeout(() => passwordInput.classList.remove('shake'), 450);
+                passwordInput.value = '';
+                passwordInput.focus();
+            }
+        }
+
+        async function handleLogout() {
+            try {
+                await fetch('/api/auth/logout', { method: 'POST' });
+            } catch (e) {}
+            localStorage.removeItem('wardhan_auth_user');
+            checkAuthStatus();
+        }
+
+        function toggleLoginPassword() {
+            const pInput = document.getElementById('loginPassword');
+            if (pInput.type === 'password') {
+                pInput.type = 'text';
+            } else {
+                pInput.type = 'password';
+            }
+        }
+
+        // On-the-fly PDF and Word downloads without database
+        function submitForPdf() {
+            const form = document.getElementById('quotationForm');
+            form.action = '/api/pdf';
+            form.target = '_blank';
+            form.submit();
+        }
+
+        function submitForWord() {
+            const form = document.getElementById('quotationForm');
+            form.action = '/api/word';
+            form.target = '_blank';
+            form.submit();
+        }
+
+        function resetSampleData() {
+            document.getElementById('company_name').value = 'WARDHAN TRADING EST.';
+            document.getElementById('date').value = '24/9/2020';
+            document.getElementById('quotation_no').value = '203/2020';
+            document.getElementById('customer_name').value = 'Radisson Blue Hotel, Kuwait';
+            document.getElementById('incharge').value = 'Thilakan';
+            document.getElementById('email').value = 'thilakantmt@gmail.com';
+            document.getElementById('phone').value = '+965 99983543';
+
+            const container = document.getElementById('itemsContainer') || document.getElementById('itemsTableBody');
+            container.innerHTML = '';
+            // addItemRow defined in script.js
+            window.addItemRow('Roll curtain one window — Material and fitting', 1, 25, 0, 25, 0);
+            window.recalculate();
+        }
+
+        // Service Worker registration for 100% offline mobile capability
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/sw.js')
+                    .then(() => console.log('[PWA] Service Worker registered'))
+                    .catch((err) => console.log('[PWA] SW registration failed:', err));
+            });
+        }
+
+        // PWA Install prompt handler
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const installBtn = document.getElementById('installPwaBtn');
+            if (installBtn) {
+                installBtn.style.display = 'inline-flex';
+                installBtn.addEventListener('click', () => {
+                    installBtn.style.display = 'none';
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then((choiceResult) => {
+                        deferredPrompt = null;
+                    });
+                });
+            }
+        });
+
+        // Initialize auth check on page load
+        document.addEventListener('DOMContentLoaded', checkAuthStatus);
+    </script>
+</body>
+</html>
